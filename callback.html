@@ -42,12 +42,24 @@
 
         if (error) {
             el.innerHTML = '<div class="status error">Authorization denied.</div>';
+            if (window.opener) {
+                window.opener.postMessage({ type: 'tiktok-auth', error: error }, '*');
+            }
         } else if (code) {
-            el.innerHTML =
-                '<div class="status success">Authorization successful!</div>' +
-                '<div class="code-box"><strong>Code:</strong><br>' + code + '</div>' +
-                (state ? '<div class="code-box"><strong>State:</strong><br>' + state + '</div>' : '') +
-                '<p>Copy the code above and use it in your application to exchange for an access token.</p>';
+            // Send code back to the opener window (Insights Extract app)
+            if (window.opener) {
+                window.opener.postMessage({ type: 'tiktok-auth', code: code, state: state }, '*');
+                el.innerHTML =
+                    '<div class="status success">Authorization successful! Returning to app...</div>' +
+                    '<p>This window will close automatically.</p>';
+                setTimeout(() => window.close(), 1500);
+            } else {
+                el.innerHTML =
+                    '<div class="status success">Authorization successful!</div>' +
+                    '<div class="code-box"><strong>Code:</strong><br>' + code + '</div>' +
+                    (state ? '<div class="code-box"><strong>State:</strong><br>' + state + '</div>' : '') +
+                    '<p>Copy the code above and use it in your application to exchange for an access token.</p>';
+            }
         } else {
             el.innerHTML = '<div class="status error">No authorization code received.</div>';
         }
